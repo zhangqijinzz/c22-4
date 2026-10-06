@@ -13,6 +13,8 @@ import { ProjectStorageService } from '../services/projectStorageService';
 import { RuleCheckService, type CheckOperation } from '../services/ruleCheckService';
 import type { WorkspacePort } from './workspacePort';
 
+export type AssetTarget = { kind: 'rule'; ruleId: string } | { kind: 'field'; fieldId: string };
+
 export type WorkspacePhase = 'loading' | 'editing' | 'validating' | 'checking' | 'ready' | 'error';
 export type CheckStatus = 'idle' | 'scheduled' | 'checking' | 'success' | 'error' | 'cancelled';
 
@@ -27,6 +29,8 @@ export interface WorkspaceState {
   validationIssues: ReturnType<typeof ruleDomain.validateProject>;
   sampleEvaluation: SampleEvaluation | null;
   selectedRuleId?: string;
+  selectedFieldId?: string;
+  revealKey?: number;
   notice: string;
   saveError?: string;
 }
@@ -106,6 +110,31 @@ export class RuleWorkspaceViewModel implements WorkspacePort {
     this.updateView({ selectedRuleId: ruleId });
   }
 
+  selectField(fieldId?: string): void {
+    this.updateView({ selectedFieldId: fieldId });
+  }
+
+  openAsset(projectId: string, target: AssetTarget): void {
+    const workspace = this.state.workspace;
+    const targetProject = workspace?.projects.find((candidate) => candidate.id === projectId);
+    if (!workspace || !targetProject) return;
+    const switching = workspace.activeProjectId !== projectId;
+    const module: ModuleId = target.kind === 'rule' ? 'rules' : 'fields';
+    const targetName = target.kind === 'rule'
+      ? targetProject.rules.find((rule) => rule.id === target.ruleId)?.name ?? '规则'
+      : targetProject.fields.find((field) => field.id === target.fieldId)?.name ?? '字段';
+    if (switching) {
+      this.cancelCheck();
+      this.activateProject(targetProject, module, `已切换到“${targetProject.title}”，并定位到${target.kind === 'rule' ? '规则' : '字段'}“${targetName}”`);
+    } else {
+      this.updateView({ activeModule: module, notice: `已定位到${target.kind === 'rule' ? '规则' : '字段'}“${targetName}”` });
+    }
+    const selection = target.kind === 'rule'
+      ? { selectedRuleId: target.ruleId, selectedFieldId: undefined }
+      : { selectedFieldId: target.fieldId, selectedRuleId: undefined };
+    this.publish({ ...this.state, ...selection, revealKey: (this.state.revealKey ?? 0) + 1 });
+  }
+
   renameProject(title: string): void {
     const project = this.state.project;
     if (project) this.commitProject({ ...project, title }, '项目名称已更新', { recheck: false });
@@ -168,9 +197,22 @@ export class RuleWorkspaceViewModel implements WorkspacePort {
     const project = workspace?.projects.find((candidate) => candidate.id === projectId);
     if (!workspace || !project || workspace.activeProjectId === projectId) return;
     this.cancelCheck();
-    const next = { ...workspace, activeProjectId: projectId };
+    this.activateProject(project, 'inspection', `已切换到“${project.title}”`);
+  }
+
+  private activateProject(project: RuleProject, module: ModuleId, notice: string): void {
+    const workspace = this.state.workspace;
+    if (!workspace) return;
+    const next = { ...workspace, activeProjectId: project.id };
     const issues = ruleDomain.validateProject(project);
-    this.publish({ ...this.state, workspace: next, project, phase: issues.length ? 'validating' : 'editing', activeModule: 'inspection', checkStatus: issues.length ? 'idle' : 'scheduled', analysis: null, validationIssues: issues, sampleEvaluation: evaluateSample(project, project.sampleInputs), selectedRuleId: project.rules[0]?.id, notice: `已切换到“${project.title}”` });
+    this.publish({
+      ...this.state, workspace: next, project,
+      phase: issues.length ? 'validating' : 'editing', activeModule: module,
+      checkStatus: issues.length ? 'idle' : 'scheduled', analysis: null, validationIssues: issues,
+      sampleEvaluation: evaluateSample(project, project.sampleInputs),
+      selectedRuleId: project.rules[0]?.id,
+      notice,
+    });
     this.scheduleSave(next);
     if (!issues.length) this.scheduleCheck(80);
   }

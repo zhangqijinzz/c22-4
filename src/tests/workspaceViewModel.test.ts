@@ -97,8 +97,36 @@ describe('RuleWorkspaceViewModel', () => {
     workspace.restoreVersion(savedVersion?.id ?? '');
     expect(workspace.getSnapshot().project?.frozenVersionId).toBeUndefined();
     workspace.copyVersionToProject(savedVersion?.id ?? '');
-    expect(workspace.getSnapshot().workspace?.projects).toHaveLength(2);
+    expect(workspace.getSnapshot().workspace?.projects).toHaveLength(4);
     expect(workspace.getSnapshot().project?.fields).toHaveLength(3);
+    workspace.dispose();
+  });
+
+  it('opens assets across projects by switching project, module, and selection atomically', async () => {
+    const workspace = new RuleWorkspaceViewModel(new MemoryRepository(), new FakeChecker());
+    await workspace.start();
+    expect(workspace.getSnapshot().project?.id).toBe('project-membership');
+
+    workspace.openAsset('project-retention', { kind: 'rule', ruleId: 'rule-black-recall' });
+    let snapshot = workspace.getSnapshot();
+    expect(snapshot.project?.id).toBe('project-retention');
+    expect(snapshot.workspace?.activeProjectId).toBe('project-retention');
+    expect(snapshot.activeModule).toBe('rules');
+    expect(snapshot.selectedRuleId).toBe('rule-black-recall');
+    expect(snapshot.revealKey).toBeGreaterThan(0);
+
+    workspace.openAsset('project-fulfillment', { kind: 'field', fieldId: 'fl-member-level' });
+    snapshot = workspace.getSnapshot();
+    expect(snapshot.project?.id).toBe('project-fulfillment');
+    expect(snapshot.activeModule).toBe('fields');
+    expect(snapshot.selectedFieldId).toBe('fl-member-level');
+    expect(snapshot.selectedRuleId).toBeUndefined();
+
+    workspace.openAsset('project-fulfillment', { kind: 'rule', ruleId: 'rule-remote-review' });
+    snapshot = workspace.getSnapshot();
+    expect(snapshot.project?.id).toBe('project-fulfillment');
+    expect(snapshot.activeModule).toBe('rules');
+    expect(snapshot.selectedRuleId).toBe('rule-remote-review');
     workspace.dispose();
   });
 });

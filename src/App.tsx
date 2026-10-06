@@ -4,6 +4,7 @@ import { FieldsView } from './features/fields/FieldsView';
 import { RulesView } from './features/rules/RulesView';
 import { SamplesView } from './features/samples/SamplesView';
 import { InspectionView } from './features/inspection/InspectionView';
+import { AssetsView } from './features/assets/AssetsView';
 import { createRuleWeaveViewModels } from './viewmodels/createRuleWeaveViewModels';
 import './styles.css';
 
@@ -12,11 +13,12 @@ const navigation: { id: ModuleId; label: string; description: string; icon: stri
   { id: 'rules', label: '规则工作台', description: '条件与决策结果', icon: '⌘', step: '02' },
   { id: 'samples', label: '样例试验区', description: '单点命中推演', icon: '◉', step: '03' },
   { id: 'inspection', label: '检查与版本', description: '覆盖、冲突与快照', icon: '⌕', step: '04' },
+  { id: 'assets', label: '跨项目资产', description: '全局检索与分歧', icon: '▦', step: '05' },
 ];
 
 export default function App() {
   const [viewModels] = useState(createRuleWeaveViewModels);
-  const { workspace, fields, rules, samples, inspection } = viewModels;
+  const { workspace, fields, rules, samples, inspection, assets } = viewModels;
   const state = useSyncExternalStore(workspace.subscribe, workspace.getSnapshot, workspace.getSnapshot);
   const project = state.project;
   const activeNavigation = navigation.find((item) => item.id === state.activeModule) ?? navigation[0];
@@ -26,10 +28,24 @@ export default function App() {
     return () => workspace.dispose();
   }, [workspace]);
 
+  useEffect(() => {
+    if (state.revealKey === undefined) return;
+    const selector = state.activeModule === 'fields' && state.selectedFieldId
+      ? `[data-field-id="${state.selectedFieldId}"]`
+      : state.activeModule === 'rules' && state.selectedRuleId
+        ? `[data-rule-id="${state.selectedRuleId}"]`
+        : '';
+    if (!selector) return;
+    const frame = requestAnimationFrame(() => {
+      const element = document.querySelector(selector);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [state.revealKey, state.activeModule, state.selectedFieldId, state.selectedRuleId]);
+
   const openRule = (ruleId: string) => {
-    workspace.navigate('rules');
-    workspace.selectRule(ruleId);
-    document.querySelector(`[data-rule-id="${ruleId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!project) return;
+    workspace.openAsset(project.id, { kind: 'rule', ruleId });
   };
 
   return (
@@ -63,6 +79,7 @@ export default function App() {
             {state.activeModule === 'rules' && <RulesView state={state} viewModel={rules} />}
             {state.activeModule === 'samples' && <SamplesView state={state} viewModel={samples} />}
             {state.activeModule === 'inspection' && <InspectionView state={state} viewModel={inspection} onOpenRule={openRule} />}
+            {state.activeModule === 'assets' && <AssetsView state={state} viewModel={assets} />}
           </div>
         </div>}
         {!project && <div className="startup-state"><div className="spinner" /><strong>正在加载 RuleWeave</strong><span>读取本地项目与版本快照</span></div>}

@@ -47,6 +47,10 @@ export class FieldsViewModel {
     const project = this.workspace.getSnapshot().project;
     return project?.rules.some((rule) => referencesField(rule.conditions, fieldId)) ?? false;
   }
+
+  selectField(fieldId: string): void {
+    this.workspace.selectField(fieldId);
+  }
 }
 
 function referencesField(condition: import('../../models/ruleModel').RuleCondition, fieldId: string): boolean {

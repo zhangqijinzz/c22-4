@@ -1,5 +1,5 @@
 import type { ModuleId, RuleProject } from '../models/ruleModel';
-import type { WorkspaceState } from './workspaceViewModel';
+import type { AssetTarget, WorkspaceState } from './workspaceViewModel';
 
 export interface WorkspacePort {
   getSnapshot(): WorkspaceState;
@@ -7,4 +7,6 @@ export interface WorkspacePort {
   updateView(patch: Partial<WorkspaceState>): void;
   navigate(module: ModuleId): void;
   selectRule(ruleId?: string): void;
+  selectField(fieldId?: string): void;
+  openAsset(projectId: string, target: AssetTarget): void;
 }

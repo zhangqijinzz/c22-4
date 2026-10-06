@@ -3,6 +3,7 @@ import { RulesViewModel } from '../features/rules/rulesViewModel';
 import { RuleWorkspaceViewModel } from './workspaceViewModel';
 import { SamplesViewModel } from '../features/samples/samplesViewModel';
 import { InspectionViewModel } from '../features/inspection/inspectionViewModel';
+import { AssetsViewModel } from '../features/assets/assetsViewModel';
 
 export function createRuleWeaveViewModels() {
   const workspace = new RuleWorkspaceViewModel();
@@ -12,5 +13,6 @@ export function createRuleWeaveViewModels() {
     rules: new RulesViewModel(workspace),
     samples: new SamplesViewModel(workspace),
     inspection: new InspectionViewModel(workspace),
+    assets: new AssetsViewModel(workspace),
   };
 }

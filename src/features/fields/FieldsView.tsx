@@ -40,7 +40,7 @@ export function FieldsView({ state, viewModel }: FieldsViewProps) {
         </div>
       ) : (
         <div className="field-grid">
-          {fields.map((field, index) => <FieldCard key={field.id} field={field} index={index} referenced={viewModel.isReferenced(field.id)} onUpdate={(updates) => viewModel.updateField(field.id, updates)} onRemove={() => viewModel.removeField(field.id)} />)}
+          {fields.map((field, index) => <FieldCard key={field.id} field={field} index={index} referenced={viewModel.isReferenced(field.id)} selected={state.selectedFieldId === field.id} onSelect={() => viewModel.selectField(field.id)} onUpdate={(updates) => viewModel.updateField(field.id, updates)} onRemove={() => viewModel.removeField(field.id)} />)}
         </div>
       )}
 
@@ -53,13 +53,15 @@ interface FieldCardProps {
   field: RuleField;
   index: number;
   referenced: boolean;
+  selected: boolean;
+  onSelect: () => void;
   onUpdate: (updates: Partial<RuleField>) => void;
   onRemove: () => void;
 }
 
-function FieldCard({ field, index, referenced, onUpdate, onRemove }: FieldCardProps) {
+function FieldCard({ field, index, referenced, selected, onSelect, onUpdate, onRemove }: FieldCardProps) {
   return (
-    <article className="field-card card-surface">
+    <article data-field-id={field.id} className={`field-card card-surface${selected ? ' field-card-selected' : ''}`} onFocus={onSelect}>
       <header className="card-heading">
         <div className="field-index">{String(index + 1).padStart(2, '0')}</div>
         <div className="field-heading-copy"><span className="type-tag">{field.type === 'number' ? 'NUMBER' : field.type === 'enum' ? 'ENUM' : 'BOOLEAN'}</span><strong>{field.name || '未命名字段'}</strong></div>
