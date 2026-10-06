@@ -29,7 +29,25 @@ export function createDemoWorkspace(): WorkspaceDocument {
     sampleInputs: { 'member-level': '金卡会员', 'cart-total': 1200, 'coupon-active': true },
     versions: [], updatedAt: Date.now(),
   };
-  return { schemaVersion: 1, projects: [project], activeProjectId: project.id };
+  const storeFields: RuleProject['fields'] = [
+    { id: 'store-member-level', name: '会员等级', type: 'enum', enumValues: ['普通会员', '银卡会员', '金卡会员', '黑卡会员'] },
+    { id: 'store-cart-total', name: '订单金额', type: 'number', min: 0, max: 10000 },
+    { id: 'store-coupon-active', name: '使用优惠券', type: 'boolean' },
+  ];
+  const storeRules: RuleProject['rules'] = [
+    rule('rule-black-card', '黑卡专属通道', 50, '专属客服 · 免运费', { kind: 'group', operator: 'and', conditions: [
+      { kind: 'predicate', fieldId: 'store-member-level', operator: 'eq', value: '黑卡会员' },
+    ] }),
+    rule('rule-high-risk-order', '高额订单风控', 60, '人工复核', { kind: 'group', operator: 'and', conditions: [
+      { kind: 'predicate', fieldId: 'store-cart-total', operator: 'gt', value: 8000 },
+    ] }),
+  ];
+  const storeProject: RuleProject = {
+    id: 'project-store-risk', title: '门店收银风控', fields: storeFields, rules: storeRules,
+    sampleInputs: { 'store-member-level': '黑卡会员', 'store-cart-total': 8600, 'store-coupon-active': false },
+    versions: [], updatedAt: Date.now(),
+  };
+  return { schemaVersion: 1, projects: [project, storeProject], activeProjectId: project.id };
 }
 
 export function createBlankProject(ordinal: number): RuleProject {

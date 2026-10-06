@@ -106,6 +106,14 @@ export class RuleWorkspaceViewModel implements WorkspacePort {
     this.updateView({ selectedRuleId: ruleId });
   }
 
+  openAssetTarget(projectId: string, module: ModuleId, ruleId?: string): void {
+    const workspace = this.state.workspace;
+    if (!workspace || !workspace.projects.some((project) => project.id === projectId)) return;
+    if (workspace.activeProjectId !== projectId) this.switchProject(projectId);
+    this.navigate(module);
+    if (ruleId !== undefined) this.selectRule(ruleId);
+  }
+
   renameProject(title: string): void {
     const project = this.state.project;
     if (project) this.commitProject({ ...project, title }, '项目名称已更新', { recheck: false });

@@ -96,9 +96,31 @@ describe('RuleWorkspaceViewModel', () => {
 
     workspace.restoreVersion(savedVersion?.id ?? '');
     expect(workspace.getSnapshot().project?.frozenVersionId).toBeUndefined();
+    const projectCountBeforeCopy = workspace.getSnapshot().workspace?.projects.length ?? 0;
     workspace.copyVersionToProject(savedVersion?.id ?? '');
-    expect(workspace.getSnapshot().workspace?.projects).toHaveLength(2);
+    expect(workspace.getSnapshot().workspace?.projects).toHaveLength(projectCountBeforeCopy + 1);
     expect(workspace.getSnapshot().project?.fields).toHaveLength(3);
+    workspace.dispose();
+  });
+
+  it('opens an asset target by switching project, module and selection together', async () => {
+    const workspace = new RuleWorkspaceViewModel(new MemoryRepository(), new FakeChecker());
+    await workspace.start();
+    expect(workspace.getSnapshot().project?.id).toBe('project-membership');
+
+    workspace.openAssetTarget('project-store-risk', 'rules', 'rule-black-card');
+    const state = workspace.getSnapshot();
+    expect(state.project?.id).toBe('project-store-risk');
+    expect(state.workspace?.activeProjectId).toBe('project-store-risk');
+    expect(state.activeModule).toBe('rules');
+    expect(state.selectedRuleId).toBe('rule-black-card');
+
+    workspace.openAssetTarget('project-store-risk', 'fields');
+    expect(workspace.getSnapshot().activeModule).toBe('fields');
+    expect(workspace.getSnapshot().project?.id).toBe('project-store-risk');
+
+    workspace.openAssetTarget('project-missing', 'rules');
+    expect(workspace.getSnapshot().project?.id).toBe('project-store-risk');
     workspace.dispose();
   });
 });

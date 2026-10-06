@@ -59,7 +59,7 @@ interface FieldCardProps {
 
 function FieldCard({ field, index, referenced, onUpdate, onRemove }: FieldCardProps) {
   return (
-    <article className="field-card card-surface">
+    <article data-field-id={field.id} className="field-card card-surface">
       <header className="card-heading">
         <div className="field-index">{String(index + 1).padStart(2, '0')}</div>
         <div className="field-heading-copy"><span className="type-tag">{field.type === 'number' ? 'NUMBER' : field.type === 'enum' ? 'ENUM' : 'BOOLEAN'}</span><strong>{field.name || '未命名字段'}</strong></div>

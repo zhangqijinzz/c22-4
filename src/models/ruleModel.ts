@@ -1,6 +1,6 @@
 export type FieldType = 'number' | 'enum' | 'boolean';
 export type ScalarValue = string | number | boolean;
-export type ModuleId = 'fields' | 'rules' | 'samples' | 'inspection';
+export type ModuleId = 'fields' | 'rules' | 'samples' | 'inspection' | 'assets';
 
 export interface RuleField {
   id: string;
